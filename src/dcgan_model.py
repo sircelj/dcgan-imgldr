@@ -48,11 +48,22 @@ def batchnorm(x, is_training, name='batch_norm'):
 
 
 def discriminator(X, is_training, disc_dim=64):
-    """
-    :param X:
-    :param is_training: boolean
-    :param disc_dim: number of kernels for the first layer
-    :return: probability, logits
+    """Discriminator network
+
+    Parameters
+    ----------
+    X : tensor,
+        Input image
+    is_training : boolean or tensor,
+        Parameter for batch_norm
+    disc_dim : int,
+        Number of kernels for the first layer
+
+    Returns
+    -------
+    probability, logits: tuple (tensor, tensor)
+        probability: Calculated probability that the image is real,
+        logits: Logits for the probability
     """
     with tf.variable_scope('discriminator'):
         batch_size = X.get_shape().as_list()[0]
@@ -70,29 +81,47 @@ def discriminator(X, is_training, disc_dim=64):
         return tf.nn.sigmoid(logits), logits
 
 
-def generator(z, out_height, out_width, out_channels, is_training):
-    # TODO: improve out dimesionality robustness
+def generator(z, start_height=4, start_width=4, out_channels=3, is_training=True):
+    """Generator network
+
+    Parameters
+    ----------
+    z : tensor, shape (batch_size, latent_size, )
+        Input latent vector
+    start_height : int
+        Output height of image divided by 16
+    start_width : int
+        Output width of image divided by 16
+    out_channels : int
+        Number of desired output channels
+    is_training : boolean or tensor
+        Parameter for batch_norm
+
+    Returns
+    -------
+    h4 : tensor, shape (batch_size, start_height * 16, start_width * 16, out_channels)
+        Generated batch of images.
+    """
 
     first_size = 512
-    start_size = 4
 
     with tf.variable_scope('generator'):
         batch_size = z.get_shape().as_list()[0]
         with tf.variable_scope("reshape"):
-            h0 = linear(z, first_size * start_size**2)
-            h0 = tf.reshape(h0, [-1, start_size, start_size, first_size])
+            h0 = linear(z, first_size * start_height * start_width)
+            h0 = tf.reshape(h0, [-1, start_height, start_width, first_size])
             h0 = relu(batchnorm(h0, is_training))
         with tf.variable_scope("deconv_1"):
-            h1 = deconv(h0, [batch_size, start_size * 2, start_size * 2, first_size // 2])
+            h1 = deconv(h0, [batch_size, start_height * 2, start_width * 2, first_size // 2])
             h1 = relu(batchnorm(h1, is_training))
         with tf.variable_scope("deconv_2"):
-            h2 = deconv(h1, [batch_size, start_size * 4, start_size * 4, first_size // 4])
+            h2 = deconv(h1, [batch_size, start_height * 4, start_width * 4, first_size // 4])
             h2 = relu(batchnorm(h2, is_training))
         with tf.variable_scope("deconv_3"):
-            h3 = deconv(h2, [batch_size, start_size * 8, start_size * 8, first_size // 8])
+            h3 = deconv(h2, [batch_size, start_height * 8, start_width * 8, first_size // 8])
             h3 = relu(batchnorm(h3, is_training))
         with tf.variable_scope("deconv_4"):
-            h4 = deconv(h3, [batch_size, start_size * 16, start_size * 16, out_channels])
+            h4 = deconv(h3, [batch_size, start_height * 16, start_width * 16, out_channels])
             h4 = tf.nn.tanh(h4)
 
         return h4

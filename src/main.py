@@ -28,7 +28,8 @@ def train(batch_size=64, image_dimensions=[64, 64, 3], z_size=100, num_of_epochs
             tf.summary.histogram('Noise', z)
 
         with tf.variable_scope("GAN"):
-            G = generator(z, None, None, image_dimensions[2], is_training=is_training)
+            G = generator(z, start_height=4, start_width=4,
+                          out_channels=image_dimensions[2], is_training=is_training)
             D_real, D_real_logits = discriminator(X, is_training=is_training)
             tf.get_variable_scope().reuse_variables()
             D_fake, D_fake_logits = discriminator(G, is_training=is_training)
@@ -170,6 +171,6 @@ def train(batch_size=64, image_dimensions=[64, 64, 3], z_size=100, num_of_epochs
                 bleh = sess.run(increment_step_var)
 
 if __name__ == '__main__':
-    # train()
-    train(restart_from='celeba_output/2018-07-30_22h50m26s_DCGAN_S')
+    train()
+    # train(restart_from='celeba_output/2018-07-30_22h50m26s_DCGAN_S')
     # train(restart_from='celeba_output/2018-07-13_23h03m37s_DCGAN_S', num_of_epochs=30)
