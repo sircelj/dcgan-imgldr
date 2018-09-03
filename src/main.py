@@ -8,7 +8,7 @@ import sys
 
 
 # def train(batch_size=64, image_dimensions=[218, 178, 3], z_size=100):
-def train(batch_size=64, image_dimensions=[64, 64, 3], z_size=100, num_of_epochs=100,
+def train(imageloader, batch_size=64, image_dimensions=[64, 64, 3], z_size=100, num_of_epochs=100,
           num_D_updates=1, num_G_updates=2, restart_from=None, logdir="DCGAN_12"):
     from dcgan_model import discriminator, generator
 
@@ -104,10 +104,9 @@ def train(batch_size=64, image_dimensions=[64, 64, 3], z_size=100, num_of_epochs
             if not os.path.exists(output_dir):
                 os.makedirs(output_im_dir)
 
-            print("Setting up ImageLoader")
+            # Set ImageLoaders starting epoch
             curr_epoch = sess.run(epoch_var)
-            celeba = ImageLoader('../img_align_celeba/', batch_size, start_epoch=curr_epoch)
-            # celeba = ImageLoader('../img_small/', batch_size, start_epoch=curr_epoch)
+            imageloader.set_epoch(curr_epoch)
 
             print("Setting up the summary")
             merged_summary = tf.summary.merge_all()
@@ -139,9 +138,9 @@ def train(batch_size=64, image_dimensions=[64, 64, 3], z_size=100, num_of_epochs
                     if curr_epoch % 1 == 0:
                         samples = sess.run(G, feed_dict={z: np.random.uniform(-1., 1., [batch_size, z_size]),
                                                          is_training: False})
-                        fig = plotimage(samples)
-                        plt.savefig(output_im_dir + '%s.png' % str(curr_epoch).zfill(3), bbox_inches='tight')
-                        plt.close(fig)
+
+                        # Save images/audio... using the given imageloader
+                        imageloader.epoch_save(samples, output_im_dir, curr_epoch)
 
                         # Make checkpoint
                         gout = gen_saver.save(sess, output_dir + "generator/ckpt", global_step=epoch_var)
@@ -170,7 +169,14 @@ def train(batch_size=64, image_dimensions=[64, 64, 3], z_size=100, num_of_epochs
 
                 bleh = sess.run(increment_step_var)
 
+
 if __name__ == '__main__':
-    train()
+    batch_size = 64
+
+    print("Setting up ImageLoader")
+    celeba = ImageLoader('../img_align_celeba/', batch_size=batch_size)
+    # celeba = ImageLoader('../img_small/', batch_size=batch_size)
+
+    train(imageloader=celeba, batch_size=batch_size)
     # train(restart_from='celeba_output/2018-07-30_22h50m26s_DCGAN_S')
     # train(restart_from='celeba_output/2018-07-13_23h03m37s_DCGAN_S', num_of_epochs=30)

@@ -4,6 +4,7 @@ from scipy.misc import imresize, imread
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from scipy.io.wavfile import read as wavread
+from scipy.io.wavfile import write as wavwrite
 from scipy import signal
 
 
@@ -53,6 +54,9 @@ class ImageLoader:
         self.im_height = im_height
         self.im_c = im_c
 
+    def set_epoch(self, epoch):
+        self.epoch = epoch
+
     def _get_image(self, name):
         im = imread(self.im_dir + name)
         im_h, im_w, im_c = im.shape
@@ -73,6 +77,11 @@ class ImageLoader:
             np.random.shuffle(self.file_names)
 
         return batch
+
+    def epoch_save(self, samples, dir_name, epoch):
+        fig = plotimage(samples)
+        plt.savefig(dir_name + '%s.png' % str(epoch).zfill(3), bbox_inches='tight')
+        plt.close(fig)
 
     @staticmethod
     def __transform_area(x, a, b, alpha, beta):
@@ -177,6 +186,30 @@ class SCC(ImageLoader):
         # Do an inverse of the SFTF using the LSEE-MSTFT method from Griffin-Lim paper
         times, audio_sig = signal.istft(stft, fs=self.rate, nperseg=nperseg, noverlap=noverlap)
         return audio_sig
+
+    def epoch_save(self, samples, dir_name, epoch):
+
+        # Create new epoch directory
+        ep_dir_name = dir_name + '/%s' % str(epoch).zfill(3)
+        if not os.path.exists(ep_dir_name):
+            os.makedirs(ep_dir_name)
+
+        # Create a 8x8 grid of mag/phase images
+        batch_size, _, width, _ = samples.shape
+        samples_magphase = np.zeros((batch_size, width, width))
+        # samples_magphase[:, :width // 2, :] = np.squeeze(samples[:, :, :, 0])
+        samples_magphase[:, :width // 2, :] = samples[:, :, :, 0]  # Spectrogram
+        samples_magphase[:, width // 2:, :] = samples[:, :, :, 1]  # Phase
+
+        # Save the image
+        fig = plotimage(samples_magphase)
+        plt.savefig(ep_dir_name + 'mag_phase.png', bbox_inches='tight')
+        plt.close(fig)
+
+        # Save sound samples
+        for i, magphase in enumerate(samples):
+            audio = self._image_to_audio(magphase)
+            wavwrite(ep_dir_name + "%s.wav" % str(i).zfill(3), self.rate, audio)
 
 
 if __name__ == "__main__":
