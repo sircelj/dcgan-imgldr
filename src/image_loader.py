@@ -6,21 +6,7 @@ import matplotlib.gridspec as gridspec
 from scipy.io.wavfile import read as wavread
 from scipy.io.wavfile import write as wavwrite
 from scipy import signal
-
-
-def plotimage(samples):
-    fig = plt.figure(figsize=(8, 8))
-    gs = gridspec.GridSpec(8, 8)
-    gs.update(wspace=0.05, hspace=0.05)
-
-    for i, sample in enumerate(samples[:64]):
-        ax = plt.subplot(gs[i])
-        plt.axis('off')
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
-        ax.set_aspect('equal')
-        plt.imshow(ImageLoader.tanh2rgb(sample.reshape(64, 64, 3)).astype(np.uint8), cmap='Greys_r')
-    return fig
+import random
 
 
 def plotimage_row(samples):
@@ -53,6 +39,22 @@ class ImageLoader:
         self.im_width = im_width
         self.im_height = im_height
         self.im_c = im_c
+        self.image_size = (64, 64, 3)
+
+    def plotimage(self, samples):
+        fig = plt.figure(figsize=(8, 8))
+        gs = gridspec.GridSpec(8, 8)
+        gs.update(wspace=0.05, hspace=0.05)
+
+        for i, sample in enumerate(samples[:64]):
+            ax = plt.subplot(gs[i])
+            plt.axis('off')
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+            ax.set_aspect('equal')
+            plt.imshow(self.tanh2rgb(sample.reshape(*self.image_size)).astype(np.uint8), cmap='Greys_r')
+
+        return fig
 
     def set_epoch(self, epoch):
         self.epoch = epoch
@@ -79,7 +81,7 @@ class ImageLoader:
         return batch
 
     def epoch_save(self, samples, dir_name, epoch):
-        fig = plotimage(samples)
+        fig = self.plotimage(samples)
         plt.savefig(dir_name + '%s.png' % str(epoch).zfill(3), bbox_inches='tight')
         plt.close(fig)
 
@@ -118,6 +120,10 @@ class SCC(ImageLoader):
         super().__init__(im_dir, batch_size, sub_dirs, start_epoch, im_width, im_height, im_c)
         self.rate = None
         self.step = 2
+        self.image_size = (128, 128)
+
+        # Set the rate
+        self._get_image(self.im_dir + random.choice(self.file_names))
 
     def _downsample(self, rate, signal):
         return rate/self.step, signal[::self.step]
@@ -150,11 +156,16 @@ class SCC(ImageLoader):
                                                nperseg=nperseg, noverlap=noverlap)
 
         # Convert to log10 magnitude and phase
-        spectrogram = np.log10(np.absolute(stft))
+        spectrogram = np.log10(np.absolute(stft) + 1e-10)
         phasegram = np.angle(stft) / np.pi  # Scale angles to [-1, 1]
 
         # Scale the magnitude
         spectrogram /= mag_scale
+
+        if stft.shape[1] != 128:
+            # Pad the matrices
+            spectrogram = np.pad(spectrogram, [(0, 0), (0, 128 - stft.shape[1])], 'minimum')
+            phasegram = np.pad(phasegram, [(0, 0), (0, 128 - stft.shape[1])], 'constant')
 
         # Join into one two channel tensor
         return np.stack((phasegram, spectrogram), axis=-1)
@@ -190,7 +201,7 @@ class SCC(ImageLoader):
     def epoch_save(self, samples, dir_name, epoch):
 
         # Create new epoch directory
-        ep_dir_name = dir_name + '/%s' % str(epoch).zfill(3)
+        ep_dir_name = dir_name + '/%s' % str(epoch).zfill(3) + '/'
         if not os.path.exists(ep_dir_name):
             os.makedirs(ep_dir_name)
 
@@ -202,14 +213,14 @@ class SCC(ImageLoader):
         samples_magphase[:, width // 2:, :] = samples[:, :, :, 1]  # Phase
 
         # Save the image
-        fig = plotimage(samples_magphase)
+        fig = self.plotimage(samples_magphase)
         plt.savefig(ep_dir_name + 'mag_phase.png', bbox_inches='tight')
         plt.close(fig)
 
         # Save sound samples
         for i, magphase in enumerate(samples):
             audio = self._image_to_audio(magphase)
-            wavwrite(ep_dir_name + "%s.wav" % str(i).zfill(3), self.rate, audio)
+            wavwrite(ep_dir_name + "%s.wav" % str(i).zfill(3), int(self.rate), audio)
 
 
 if __name__ == "__main__":

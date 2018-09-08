@@ -1,7 +1,6 @@
 import tensorflow as tf
 import numpy as np
-import matplotlib.pyplot as plt
-from image_loader import ImageLoader, plotimage
+from image_loader import ImageLoader, SCC
 from datetime import datetime
 import os
 import sys
@@ -9,7 +8,8 @@ import sys
 
 # def train(batch_size=64, image_dimensions=[218, 178, 3], z_size=100):
 def train(imageloader, batch_size=64, image_dimensions=[64, 64, 3], z_size=100, num_of_epochs=100,
-          num_D_updates=1, num_G_updates=2, restart_from=None, logdir="DCGAN_12"):
+          num_D_updates=1, num_G_updates=2, restart_from=None, logdir="DCGAN_12",
+          gen_start_height=4, gen_start_width=4):
     from dcgan_model import discriminator, generator
 
     print("Setting up the Graph")
@@ -28,7 +28,7 @@ def train(imageloader, batch_size=64, image_dimensions=[64, 64, 3], z_size=100, 
             tf.summary.histogram('Noise', z)
 
         with tf.variable_scope("GAN"):
-            G = generator(z, start_height=4, start_width=4,
+            G = generator(z, start_height=gen_start_height, start_width=gen_start_width,
                           out_channels=image_dimensions[2], is_training=is_training)
             D_real, D_real_logits = discriminator(X, is_training=is_training)
             tf.get_variable_scope().reuse_variables()
@@ -116,14 +116,14 @@ def train(imageloader, batch_size=64, image_dimensions=[64, 64, 3], z_size=100, 
             print("Start learning")
             while curr_epoch < num_of_epochs:
 
-                if (curr_epoch < celeba.epoch or sess.run(step_var) == 0) and celeba.epoch % 1 == 0:
+                if (curr_epoch < imageloader.epoch or sess.run(step_var) == 0) and imageloader.epoch % 1 == 0:
                     print("")
-                    curr_epoch = celeba.epoch
+                    curr_epoch = imageloader.epoch
                     bleh = sess.run(tf.assign(epoch_var, curr_epoch))
                     bleh2 = sess.run(epoch_var)
 
                     # Write epoch summary
-                    batch_X = celeba.get_new_batch()
+                    batch_X = imageloader.get_new_batch()
                     batch_noise = np.random.uniform(-1, 1, [batch_size, z_size])
 
                     D_loss_print = sess.run(D_loss, feed_dict={X: batch_X, z: batch_noise, is_training: False})
@@ -151,7 +151,7 @@ def train(imageloader, batch_size=64, image_dimensions=[64, 64, 3], z_size=100, 
 
                 # Discriminator update
                 for _ in range(num_D_updates):
-                    batch_X = celeba.get_new_batch()
+                    batch_X = imageloader.get_new_batch()
                     batch_noise = np.random.uniform(-1, 1, [batch_size, z_size])
                     sess.run(D_train, feed_dict={X: batch_X, z: batch_noise, is_training: True})
 
@@ -161,10 +161,10 @@ def train(imageloader, batch_size=64, image_dimensions=[64, 64, 3], z_size=100, 
                     sess.run(G_train, feed_dict={z: batch_noise, is_training: True})
 
                 # Loading bar
-                if curr_epoch == celeba.epoch:
+                if curr_epoch == imageloader.epoch:
                     sys.stdout.write('\r')
-                    sys.stdout.write("[%-60s] %d%%" % ('=' * int(60 * celeba.image_index / celeba.number_of_images),
-                                                       int(100 * celeba.image_index / celeba.number_of_images)))
+                    sys.stdout.write("[%-60s] %d%%" % ('=' * int(60 * imageloader.image_index / imageloader.number_of_images),
+                                                       int(100 * imageloader.image_index / imageloader.number_of_images)))
                     sys.stdout.flush()
 
                 bleh = sess.run(increment_step_var)
@@ -174,9 +174,16 @@ if __name__ == '__main__':
     batch_size = 64
 
     print("Setting up ImageLoader")
-    celeba = ImageLoader('../img_align_celeba/', batch_size=batch_size)
-    # celeba = ImageLoader('../img_small/', batch_size=batch_size)
+    if False:
+        imageloader = ImageLoader('../img_align_celeba/', batch_size=batch_size)
+        # celeba = ImageLoader('../img_small/', batch_size=batch_size)
 
-    train(imageloader=celeba, batch_size=batch_size)
-    # train(restart_from='celeba_output/2018-07-30_22h50m26s_DCGAN_S')
-    # train(restart_from='celeba_output/2018-07-13_23h03m37s_DCGAN_S', num_of_epochs=30)
+        train(imageloader=imageloader, batch_size=batch_size)
+        # train(restart_from='celeba_output/2018-07-30_22h50m26s_DCGAN_S')
+        # train(restart_from='celeba_output/2018-07-13_23h03m37s_DCGAN_S', num_of_epochs=30)
+
+    if True:
+        # scc = SCC('../speech_small/', batch_size=batch_size, sub_dirs=['yes/', 'no/', 'on/', 'off/'])
+        scc = SCC('../speech_commands/', batch_size=batch_size, sub_dirs=['yes/', 'no/', 'on/', 'off/'])
+        train(imageloader=scc, batch_size=batch_size, image_dimensions=[64, 128, 2], num_of_epochs=100,
+              logdir='DCGAN_12_SCC', gen_start_height=4, gen_start_width=8)
