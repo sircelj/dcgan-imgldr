@@ -106,14 +106,6 @@ class ImageLoader:
         return ImageLoader.__transform_area(x, 0, 1, 0, 256)
 
 
-"""
-class CelebA(ImageLoader):
-
-    def __init__(self):
-        super().__init__()
-"""
-
-
 class SCC(ImageLoader):
 
     def __init__(self, im_dir, batch_size, sub_dirs=[""], start_epoch=0, im_width=128, im_height=64, im_c=2):
@@ -123,7 +115,7 @@ class SCC(ImageLoader):
         self.image_size = (128, 128)
 
         # Set the rate
-        self._get_image(self.im_dir + random.choice(self.file_names))
+        self._get_image(random.choice(self.file_names))
 
     def _downsample(self, rate, signal):
         return rate/self.step, signal[::self.step]
@@ -167,7 +159,7 @@ class SCC(ImageLoader):
             spectrogram = np.pad(spectrogram, [(0, 0), (0, 128 - stft.shape[1])], 'minimum')
             phasegram = np.pad(phasegram, [(0, 0), (0, 128 - stft.shape[1])], 'constant')
 
-        # Join into one two channel tensor
+        # Join into a two-channel tensor
         return np.stack((phasegram, spectrogram), axis=-1)
 
     def _image_to_audio(self, mag_phase, nperseg=126, noverlap=None, mag_scale=np.log10(2**15)):
@@ -182,14 +174,6 @@ class SCC(ImageLoader):
         #     raise ValueError("mag/phase matrix height not consistent width nperseg")
         phasegram = np.pi * mag_phase[:, :, 0]
         spectrogram = mag_scale * mag_phase[:, :, 1]
-
-        # Todo: brisi to
-        if False:
-            plt.figure(1)
-            plt.imshow(spectrogram)
-            plt.figure(2)
-            plt.imshow(phasegram)
-            plt.show()
 
         # Transform the mag/phase matrix to a SFTF matrix
         stft = np.power(10, spectrogram) * np.exp(1j * phasegram)
@@ -220,11 +204,10 @@ class SCC(ImageLoader):
         # Save sound samples
         for i, magphase in enumerate(samples):
             audio = self._image_to_audio(magphase)
-            wavwrite(ep_dir_name + "%s.wav" % str(i).zfill(3), int(self.rate), audio)
+            wavwrite(ep_dir_name + "%s.wav" % str(i).zfill(3), int(self.rate), audio/self.rate)
 
 
 if __name__ == "__main__":
-    # il = ImageLoader("../img_align_celeba/", 64)
     il = ImageLoader("../img_small/", 64)
     for _ in range(10):
         print(il.epoch)

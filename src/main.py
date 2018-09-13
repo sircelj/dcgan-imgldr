@@ -6,7 +6,6 @@ import os
 import sys
 
 
-# def train(batch_size=64, image_dimensions=[218, 178, 3], z_size=100):
 def train(imageloader, batch_size=64, image_dimensions=[64, 64, 3], z_size=100, num_of_epochs=100,
           num_D_updates=1, num_G_updates=2, restart_from=None, logdir="DCGAN_12",
           gen_start_height=4, gen_start_width=4):
@@ -119,8 +118,6 @@ def train(imageloader, batch_size=64, image_dimensions=[64, 64, 3], z_size=100, 
                 if (curr_epoch < imageloader.epoch or sess.run(step_var) == 0) and imageloader.epoch % 1 == 0:
                     print("")
                     curr_epoch = imageloader.epoch
-                    bleh = sess.run(tf.assign(epoch_var, curr_epoch))
-                    bleh2 = sess.run(epoch_var)
 
                     # Write epoch summary
                     batch_X = imageloader.get_new_batch()
@@ -167,9 +164,6 @@ def train(imageloader, batch_size=64, image_dimensions=[64, 64, 3], z_size=100, 
                                                        int(100 * imageloader.image_index / imageloader.number_of_images)))
                     sys.stdout.flush()
 
-                bleh = sess.run(increment_step_var)
-
-
 if __name__ == '__main__':
     batch_size = 64
 
@@ -182,8 +176,26 @@ if __name__ == '__main__':
         # train(restart_from='celeba_output/2018-07-30_22h50m26s_DCGAN_S')
         # train(restart_from='celeba_output/2018-07-13_23h03m37s_DCGAN_S', num_of_epochs=30)
 
+    if False:
+        # scc = SCC('../speech_small/', batch_size=batch_size, sub_dirs=['yes/', 'no/', 'on/', 'off/'])
+        scc = SCC('../speech_commands/', batch_size=batch_size, sub_dirs=['yes/', 'no/', 'on/', 'off/'])
+        train(imageloader=scc, batch_size=batch_size, image_dimensions=[64, 128, 2], num_of_epochs=500,
+              logdir='DCGAN_12_SCC', gen_start_height=4, gen_start_width=8,
+              restart_from='celeba_output/2018-09-07_19h54m12s_DCGAN_12_SCC')
+
     if True:
+        scc = SCC('C:/Users/Jaka/Desktop/speech_commands_v0.02/', batch_size=batch_size,
+                  sub_dirs=['backward/', 'bed/', 'bird/', 'cat/', 'dog/', 'down/', 'eight/', 'five/', 'follow/',
+                            'forward/', 'four/', 'go/', 'happy/', 'house/', 'learn/', 'left/', 'marvin/', 'nine/',
+                            'no/', 'off/', 'on/', 'one/', 'right/', 'seven/', 'sheila/', 'six/', 'stop/', 'three/',
+                            'tree/', 'two/', 'up/', 'visual/', 'wow/', 'yes/', 'zero/'])
+        train(imageloader=scc, batch_size=batch_size, image_dimensions=[64, 128, 2], num_of_epochs=200,
+              logdir='DCGAN_12_SCC_large', gen_start_height=4, gen_start_width=8)
+              # restart_from='celeba_output/2018-09-09_09h52m57s_DCGAN_12_SCC_large')
+
+    if False:
         # scc = SCC('../speech_small/', batch_size=batch_size, sub_dirs=['yes/', 'no/', 'on/', 'off/'])
         scc = SCC('../speech_commands/', batch_size=batch_size, sub_dirs=['yes/', 'no/', 'on/', 'off/'])
         train(imageloader=scc, batch_size=batch_size, image_dimensions=[64, 128, 2], num_of_epochs=100,
-              logdir='DCGAN_12_SCC', gen_start_height=4, gen_start_width=8)
+              logdir='DCGAN_12_SCC', gen_start_height=4, gen_start_width=8,
+              restart_from='celeba_output/2018-09-11_18h28m14s_DCGAN_12_SCC')
