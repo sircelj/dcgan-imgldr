@@ -271,7 +271,7 @@ class SCC(ImageLoader):
 
     def _get_image(self, name, nperseg=126, noverlap=None, mag_scale=np.log10(2**15)):
         """
-        From audio in name construct the magnitude/phase tensor.
+        From audio in the file name construct the magnitude/phase tensor.
 
         Parameters
         ----------
