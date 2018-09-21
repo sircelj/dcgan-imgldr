@@ -7,14 +7,71 @@ def fix_size(size, stride):
 
 
 def lrelu(x, alpha=0.2):
+    """
+    Leaky ReLU activation layer
+
+    Parameters
+    ----------
+    x : tensor
+        Input
+    alpha : float
+        Slope of the activation at x < 0.
+
+    Returns
+    -------
+    y : tensor
+        Output
+    """
     return tf.nn.leaky_relu(x, alpha=alpha)
 
 
 def relu(x):
+    """
+    ReLU activation layer
+
+    Parameters
+    ----------
+    x : tensor
+        Input
+
+    Returns
+    -------
+    y : tensor
+        Output
+    """
     return tf.nn.relu(x)
 
 
 def conv(x, out_dim, k_h=5, k_w=5, d_h=2, d_w=2, stddev=0.02, name='conv'):
+    """
+    Convolutional layer
+
+    Parameters
+    ----------
+    x : tensor
+        Input tensor
+    out_dim : int
+        Depth of the output tensor.
+    k_h : int
+        Height of the filter.
+    k_w : int
+        Width of the filter.
+    d_h : int
+        Horizontal stride size.
+    d_w : int
+        Vertical stride size.
+    stddev: float
+        Standard deviation for the normal random initializer
+        of the filter.
+    name : string
+        Name of the layer.
+
+    Returns
+    -------
+    y : tensor
+        Output tensor.
+
+    """
     with tf.variable_scope(name):
         kernel = tf.get_variable('kernel', [k_h, k_w, x.get_shape()[-1], out_dim],
                                  initializer=tf.truncated_normal_initializer(stddev=stddev))
@@ -23,6 +80,36 @@ def conv(x, out_dim, k_h=5, k_w=5, d_h=2, d_w=2, stddev=0.02, name='conv'):
 
 
 def deconv(x, out_shape, k_h=5, k_w=5, d_h=2, d_w=2, stddev=0.02, name='deconv'):
+    """
+    Deconvolution or. transpose convolution layer
+
+    Parameters
+    ----------
+    x : tensor
+        Input tensor
+    out_shape : array, shape (4, )
+        Shape of the output tensor. Values follow as
+        [batch_size, height, width, channels].
+    k_h : int
+        Height of the filter.
+    k_w : int
+        Width of the filter.
+    d_h : int
+        Vertical stride size.
+    d_w : int
+        Horizontal stride size.
+    stddev : float
+        Standard deviation for the normal random initializer
+        of the filter.
+    name : string
+        Name of the layer.
+
+    Returns
+    -------
+    y : tensor
+        Output tensor.
+
+    """
     with tf.variable_scope(name):
         kernel = tf.get_variable('kernel', [k_h, k_w, out_shape[-1], x.get_shape()[-1]],
                                  initializer=tf.random_normal_initializer(stddev=stddev))
@@ -32,6 +119,28 @@ def deconv(x, out_shape, k_h=5, k_w=5, d_h=2, d_w=2, stddev=0.02, name='deconv')
 
 
 def linear(x, out_size, stddev=0.2, bias_start=0.0, name="linear"):
+    """
+    Linear layer
+
+    Parameters
+    ----------
+    x : tensor
+        Input tensor
+    out_size : int
+        Size of output tensor
+    stddev :
+        Standard deviation of the random normal initialisation of
+        the layer.
+    bias_start :
+        Starting bias values for the layer.
+    name
+
+    Returns
+    -------
+    y : tensor
+        Output tensor.
+
+    """
     shape = x.get_shape().as_list()
     with tf.variable_scope(name):
         matrix = tf.get_variable("matrix", [shape[1], out_size], tf.float32,
@@ -43,12 +152,31 @@ def linear(x, out_size, stddev=0.2, bias_start=0.0, name="linear"):
 
 
 def batchnorm(x, is_training, name='batch_norm'):
+    """
+    Batch normalisation layer
+
+    Parameters
+    ----------
+    x : tensor
+        Input tensor
+    is_training : tensor or boolea
+        Denotes if we are training the batchnorm or not.
+    name : string
+        Name of the layer
+
+    Returns
+    -------
+    y : tensor
+        Output tensor after batch normalisation
+
+    """
     with tf.variable_scope('batch_norm'):
         return tf.layers.batch_normalization(x, training=is_training, name=name)
 
 
 def discriminator(X, is_training, disc_dim=64):
-    """Discriminator network
+    """
+    Discriminator network
 
     Parameters
     ----------
@@ -66,7 +194,6 @@ def discriminator(X, is_training, disc_dim=64):
         logits: Logits for the probability
     """
     with tf.variable_scope('discriminator'):
-        batch_size = X.get_shape().as_list()[0]
         with tf.variable_scope("conv_1"):
             h1 = lrelu(batchnorm(conv(X, disc_dim, name="conv_1"), is_training, name="batch_1"))
         with tf.variable_scope("conv_2"):
@@ -76,13 +203,13 @@ def discriminator(X, is_training, disc_dim=64):
         with tf.variable_scope("conv_4"):
             h4 = lrelu(batchnorm(conv(h3, disc_dim*8, name="conv_4"), is_training, name="batch_4"))
         with tf.variable_scope("logits"):
-            # logits = linear(tf.reshape(h4, [batch_size, -1]), 1, name="linear")
             logits = linear(tf.contrib.layers.flatten(h4), 1, name="linear")
         return tf.nn.sigmoid(logits), logits
 
 
 def generator(z, start_height=4, start_width=4, out_channels=3, is_training=True):
-    """Generator network
+    """
+    Generator network
 
     Parameters
     ----------
