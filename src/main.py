@@ -7,8 +7,46 @@ import sys
 
 
 def train(imageloader, batch_size=64, image_dimensions=[64, 64, 3], z_size=100, num_of_epochs=100,
-          num_D_updates=1, num_G_updates=2, restart_from=None, logdir="DCGAN_12",
+          num_D_updates=1, num_G_updates=2, restart_from=None, logdir="DCGAN",
           gen_start_height=4, gen_start_width=4):
+    """
+    Using data from the given ImageLoader, trains a DCGAN. During
+    training it also saves checkpoints, a summary and epoch_saves
+    from the ImageLoader.
+
+    Parameters
+    ----------
+    imageloader : ImageLoader
+        ImageLoader class used for feeding data used for learning.
+    batch_size : int
+        Size of each batch.
+    image_dimensions : array, shape (3, )
+        Size off the images that the given ImageLoader returns.
+    z_size : int
+        Size of the latent vectors feeding into the generator.
+    num_of_epochs : int
+        Number of epoch until finished learning.
+    num_D_updates : int
+        Number of timer the discriminator updates under each learning
+        loop.
+    num_G_updates : int
+        Number of timer the generator updates under each learning
+        loop.
+    restart_from : string
+        Location of the discriminator and generator checkpoints
+        saved from the session you want to continue from. If None
+        a new learning session is started.
+    logdir : string or None
+        Identifier of the learning session. The folder used for
+        saving checkpoints, summary file and epoch saves for the
+        ImageLoader will bi named as "celeba_output/<logdir>_<datetime>".
+        Ignored if restart_from is not None.
+    gen_start_height : int
+        Start height of the first layer of the generator.
+    gen_start_width : int
+        Start width of the first layer of the generator.
+
+    """
     from dcgan_model import discriminator, generator
 
     print("Setting up the Graph")
