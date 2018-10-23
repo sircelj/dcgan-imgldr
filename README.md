@@ -21,5 +21,5 @@ Learning was done on a laptop with a Nvidia GTX-860M card and went on only for 1
 ![Alt Text](src/celeba_output/2018-07-30_22h50m26s_DCGAN_S/images.gif)
 
 ### SCC
-Since the dataset was smaller I could achieve a lager number of epoche, 87 in total.
+Since the dataset was smaller I could achieve a lager number of epochs, 87 in total.
 ![Alt Text](src/celeba_output/2018-09-11_18h28m14s_DCGAN_12_SCC/images.gif)
