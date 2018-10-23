@@ -13,3 +13,13 @@ For an example see the `SCC` class, which is an example of an `ImageLoader` subc
 - [Tensorflow](https://www.tensorflow.org/install/)
 - [Numpy/Scipy](https://www.scipy.org/install.html)
 - [Matplotlib](https://matplotlib.org/users/installing.html)
+
+## Learning
+
+### CelebA
+Learning was done on a laptop with a Nvidia GTX-860M card and went on only for 14 epochs.
+![Alt Text](src/celeba_output/2018-07-30_22h50m26s_DCGAN_S/images.gif)
+
+### SCC
+Since the dataset was smaller I could achieve a lager number of epoche, 87 in total.
+![Alt Text](src/celeba_output/2018-09-11_18h28m14s_DCGAN_12_SCC/images.gif)
